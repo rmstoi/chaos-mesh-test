@@ -1,0 +1,38 @@
+name: Chaos
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    # branches:
+    #   - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Creating kind cluster
+        uses: helm/kind-action@v1.10.0
+
+      - name: Print cluster information
+        run: |
+          kubectl config view
+          kubectl cluster-info
+          kubectl get nodes
+          kubectl get pods -n kube-system
+          helm version
+          kubectl version
+
+      - name: Checout
+        uses: actions/checkout@v4
+
+      - name: Deploy an application
+        run: |
+          kubectl apply -f https://raw.githubusercontent.com/chaos-mesh/apps/master/ping/busybox-statefulset.yaml
+
+      - name: Run chaos mesh action
+        uses: chaos-mesh/chaos-mesh-action@master
+        env:
+          CFG_FILE: https://raw.githubusercontent.com/chaos-mesh/chaos-mesh-action/master/chaos-test.yaml
+          CHAOS_MESH_VERSION: v1.0.0
